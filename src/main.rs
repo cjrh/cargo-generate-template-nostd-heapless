@@ -1,73 +1,59 @@
 #![no_std]
 #![no_main]
 
-use core::str::FromStr;
-use libc;
-use libc_print::std_name::{println, eprintln, dbg};
-// use heapless::String;
+mod utils;
+mod errors;
 
-#[derive(Debug)]
-enum Error {
-    StringAllocationFailure,
+use core::str::FromStr;
+use libc_print::std_name::{println, eprintln, dbg};
+use errors::Error;
+use heapless::String;
+
+fn printf<T: AsRef<str>>(s: T) {
+    unsafe {
+        libc::printf(s.as_ref().as_ptr() as *const _);
+    }
 }
 
-// fn main() -> Result<(), Error> {
-// fn main() {
-//     match _main() {
-//         // Ok(()) => Ok(()),
-//         // Err(e) => Err(e),
-//         Ok(()) => (),
-//         Err(e) => {
-//             dbg!(e);
-//         }
-//     };
-// }
-
-// fn _main() -> Result<(), Error> {
-//     let s = String::<20>::from_str("Hello, world!\r\n").unwrap();
-//     dbg!(s);
-//     println!("Hello, stdout!");
-//     eprintln!("Hello, stderr!");
-
-//     // This will error
-//     let _s = String::<5>::from_str("Hello, world!\r\n")
-//         .map_err(|_| Error::StringAllocationFailure)?;
-
-//     Ok(())
-// }
+#[no_mangle]
+pub extern "C" fn main(_argc: isize, _argv: *const *const u8) -> isize {
+    match _main() {
+        Ok(()) => 0,
+        Err(e) => {
+            println!("{e}");
+            1
+        }
+    }
+}
 
 fn _main() -> Result<(), Error> {
+    // Roll-your-own wrapper of libc printf
+    printf("Hello, printf!\n");
+
+    // Or you can just use libc_print
+    dbg!("Hello, dbg!");
+    println!("Hello, stdout!");
+    eprintln!("Hello, stderr!");
+
+    // Can get heap-like strings from Heapless without dynamic allocation
+    let s = String::<20>::from_str("Hello, world!\r\n").unwrap();
+    dbg!(s);
+
+    // How about a vec?
+    let v = heapless::Vec::<_, 4>::from_slice(&[1, 2, 3, 4]).unwrap();
+    dbg!(v);
+
+    // How about a hashmap?
+    let mut h = heapless::FnvIndexMap::<_, _, 16>::new();
+
+    // review some books.
+    h.insert(123,    456).unwrap();
+    dbg!(h);
+
+    // Finally, some Rust error handling. This will fail because the string
+    // is too long.
+    let _s = String::<5>::from_str("Hello, world!\r\n")
+        .map_err(|_| Error::StringAllocationFailure)?;
+
     Ok(())
-}
-
-use core::panic::PanicInfo;
-
-/// This function is called on panic.
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
-}
-
-// Specify the entry point for the program
-#[no_mangle]
-pub extern "C" fn __libc_start_main() -> ! {
-    let pid = unsafe { libc::getpid() };
-    // Use the libc function to print the PID or perform other actions
-    // dbg!(pid);
-    loop {}
-}
-
-#[no_mangle]
-pub extern "C" fn main() -> ! {
-    let pid = unsafe { libc::getpid() };
-    // Use the libc function to print the PID or perform other actions
-    // dbg!(pid);
-    loop {}
-}
-
-// Link to the C standard library
-#[link(name = "c")]
-extern "C" {
-    fn getpid() -> libc::pid_t;
-    fn write(fd: libc::c_int, buf: *const libc::c_void, count: libc::size_t) -> libc::ssize_t;
 }

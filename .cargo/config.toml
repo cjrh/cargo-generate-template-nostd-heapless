@@ -1,4 +1,0 @@
-# Specify linker for no_std mode
-# [target.'cfg(target_os = "linux")'.build]
-# rustflags = ["-C", "link-arg=-nostartfiles"]
-
