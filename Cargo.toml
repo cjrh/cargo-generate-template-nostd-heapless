@@ -4,14 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# heapless = { version = "0.8.0", features = ["serde", "portable-atomic", "ufmt"] }
-heapless = { version = "0.8.0", features = [] }
-# libc = { version = "0.2.158", default-features = false }
+libc = { version = "0.2.158", default-features = false }
 libc-print = "0.1.23"
+# libc = "0.2.110"
+heapless = { version = "0.8.0", features = [] }
 
 [profile.dev]
 panic = "abort"
+debug-assertions = false
+assertions = false
 
 [profile.release]
 panic = "abort"
-
+assertions = false
